@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financiero Interactivo - Steckerl Aceros</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-red: #C8102E;
+            --dark-industrial: #1E1E1E;
+            --card-bg: #2B2B2B;
+            --text-light: #F5F5F5;
+            --text-muted: #AAAAAA;
+            --accent-green: #2E7D32;
+            --accent-alert: #E53935;
+            --input-bg: #3A3A3A;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-industrial);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--primary-red);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .brand-badge {
+            background-color: var(--primary-red);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        /* Panel de Filtros */
+        .filter-panel {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        .filter-group select {
+            background-color: var(--input-bg);
+            color: var(--text-light);
+            border: 1px solid #555;
+            padding: 8px 12px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            min-width: 160px;
+        }
+
+        .reset-btn {
+            margin-left: auto;
+            background-color: var(--primary-red);
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .reset-btn:hover {
+            opacity: 0.9;
+        }
+
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background-color: var(--card-bg);
+            padding: 18px;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-red);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .kpi-card.green { border-left-color: var(--accent-green); }
+
+        .kpi-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .chart-card h3 {
+            margin-top: 0;
+            font-size: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: #FFF;
+        }
+
+        @media (max-width: 600px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .filter-panel { flex-direction: column; align-items: stretch; }
+            .reset-btn { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Dashboard Analítico de Ventas</h1>
+        <div class="brand-badge">Estilo Steckerl Aceros</div>
+    </header>
+
+    <!-- Controles de Filtros Interactivas -->
+    <div class="filter-panel">
+        <div class="filter-group">
+            <label for="countryFilter">País:</label>
+            <select id="countryFilter" onchange="updateDashboard()">
+                <option value="ALL">Todos los países</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="segmentFilter">Segmento:</label>
+            <select id="segmentFilter" onchange="updateDashboard()">
+                <option value="ALL">Todos los segmentos</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="productFilter">Producto:</label>
+            <select id="productFilter" onchange="updateDashboard()">
+                <option value="ALL">Todos los productos</option>
+            </select>
+        </div>
+
+        <button class="reset-btn" onclick="resetFilters()">Limpiar Filtros</button>
+    </div>
+
+    <!-- Indicadores Clave KPI Dinámicos -->
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div class="kpi-title">Ventas Totales</div>
+            <div class="kpi-value" id="kpiSales">$0</div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-title">Ganancia Neta</div>
+            <div class="kpi-value" id="kpiProfit">$0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Margen de Ganancia</div>
+            <div class="kpi-value" id="kpiMargin">0%</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Unidades Vendidas</div>
+            <div class="kpi-value" id="kpiUnits">0</div>
+        </div>
+    </div>
+
+    <!-- Gráficos Reactivos -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Ganancia Neta por Segmento</h3>
+            <canvas id="segmentChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Ventas vs. Ganancia por País</h3>
+            <canvas id="countryChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Top Productos por Ganancia Generada</h3>
+            <canvas id="productChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Efecto de Descuentos en Ventas y Profit</h3>
+            <canvas id="discountChart"></canvas>
+        </div>
+    </div>
+</body>
+</html>
